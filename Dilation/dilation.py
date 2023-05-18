@@ -2,70 +2,25 @@ import argparse
 from argparse import RawTextHelpFormatter
 import nibabel as nib
 from scipy import ndimage as ndi
-from skimage import morphology
+# from skimage import morphology
 import numpy as np
-from matplotlib import pyplot as plt
-
-if __name__ == "__main__":
-    # help string, printed out when help flag is used
-    helpStr = """    This is the dilation script
-    Written by Jacqueline Heaton
-
-    Please run with:
-    Image 1 (the image you want to dilate), 
-    Dilation type (the type of dilation to apply - options include 'ball' and 'cross'), 
-    Voxel value (the value to dilate)
-    
-    Optional flags:
-    -o: specify output file, default is dilatedOutput.img
-    -k: kernel size for dilation, default is 1
-    -s: apply smoothing filter (not applied automatically), provide size of filter
-
-    Example 1:
-
-    python3 dilation.py AMIE_001/AMIE_001_T1_seg_vcsf.img cross 7 -k 2 -o newOutput.img -s 10
-    
-    Example 2:
-
-    python3 dilation.py AMIE_001/AMIE_001_T1_seg_vcsf.img ball 7
-
-    """
-
-    # parse in arguments
-    # parser = argparse.ArgumentParser(prog='dilation',
-    #                                  description='Dilates image based on requested dilation and voxel value',
-    #                                  epilog=helpStr, formatter_class=RawTextHelpFormatter)
-    # # image to dilate
-    # parser.add_argument("image")
-    #
-    # # nargs will take in as many inputs as are available before the next flag
-    # parser.add_argument("dilateType", choices=['ball', 'cross'])
-    # # voxels to apply dilation to - can take in as many as needed
-    # parser.add_argument("voxel", type=int)
-    #
-    # parser.add_argument('-k', '--kernel', default=1, type=int)
-    # parser.add_argument('-s', '--smooth', default=0, type=int)
-    #
-    # # if they want to change the save file
-    # parser.add_argument('-o', '--output', default="dilatedOutput.img")
-    #
-    # args = parser.parse_args()
-
-    ##################
-    # TO RUN FROM IDE, CHANGE VALUES HERE AND RUN (COMMENT OUT EVERYTHING ABOVE THIS UP UNTIL __main__(self)
-    class Arg():
-        def __init__(self):
-            self.image = "../../Data/AMIE_001/AMIE_001_T1_seg_vcsf.img"
-            # self.image = "../Data/AMIE_001/AMIE_001_T1_seg.img" # dimension mismatch
-            self.output = "dilatedOutput.img"
-            self.voxel = 7
-            self.kernel = 1
-            self.dilateType = "cross"
-            self.smooth = 10
-    args = Arg()
-    ##################
+# from matplotlib import pyplot as plt
 
 
+class dilateArg():
+    def __init__(self, image="../../Data/AMIE_001/AMIE_001_T1_seg_vcsf.img", output="dilatedOutput.img",
+                 voxel=7, kernel=1, dilateType="cross", smooth=0):
+
+        self.image = image
+        # self.image = "../Data/AMIE_001/AMIE_001_T1_seg.img" # dimension mismatch
+        self.output = output
+        self.voxel = voxel
+        self.kernel = kernel
+        self.dilateType = dilateType
+        self.smooth = smooth
+
+
+def dilate(args):
     print("Loading...")
     data = nib.load(args.image)
     # get image data
@@ -75,8 +30,6 @@ if __name__ == "__main__":
     if len(image.shape) == 4:
         image = image.squeeze()
         print("Extra dimension found, reducing to 3 dimensions")
-        print("There will be a header mismatch in the output file. "
-              "If this is an issue please rerun with another file that only has 3 dimensions")
 
     # extract binary image, where all values in voxels are 1, and everything else is 0
     binary = np.zeros(image.shape)
@@ -94,13 +47,14 @@ if __name__ == "__main__":
     # dilated = morphology.binary_dilation(binary, morph)
     print("Dilating...")
     dilated = ndi.binary_dilation(binary, morph, iterations=args.kernel)
+    image[dilated == 1] = args.voxel
 
     # apply smoothing filter if requested
     if args.smooth != 0:
         print("Smoothing...")
-        dilated2 = ndi.median_filter(dilated, size=args.smooth)
+        dilated2 = ndi.median_filter(image, size=args.smooth)
     else:
-        dilated2 = dilated
+        dilated2 = image
 
     # to plot side by side comparison of before and after dilation and smoothing, uncomment:
     #######################
@@ -121,7 +75,61 @@ if __name__ == "__main__":
     # plt.show()
     ########################
 
-    final_img = nib.Nifti1Image(dilated, data.affine, data.header)
+    final_img = nib.Nifti1Image(dilated2, data.affine, data.header)
     nib.save(final_img, args.output)
     print("Done!")
     print("Image saved to {}".format(args.output))
+
+if __name__ == "__main__":
+    # help string, printed out when help flag is used
+    helpStr = """    This is the dilation script
+    Written by Jacqueline Heaton
+
+    Please run with:
+    Image 1 (the image you want to dilate), 
+    
+    
+    Optional flags:
+    -d: dilation type (the type of dilation to apply - options include 'ball' and 'cross'), default is 'cross' 
+    -v: voxel value (the value to dilate), default is 1
+    -o: specify output file, default is dilatedOutput.img
+    -k: kernel size for dilation, default is 1
+    -s: apply smoothing filter (not applied automatically), provide size of filter
+
+    Example 1:
+
+    python3 dilation.py AMIE_001/AMIE_001_T1_seg_vcsf.img -d cross -v 7 -k 2 -o newOutput.img -s 3
+    
+    Example 2 (using all defaults):
+
+    python3 dilation.py AMIE_001/AMIE_001_T1_seg_vcsf.img
+
+    """
+    try:
+        # parse in arguments
+        parser = argparse.ArgumentParser(prog='dilation',
+                                         description='Dilates image based on requested dilation and voxel value',
+                                         epilog=helpStr, formatter_class=RawTextHelpFormatter, usage=argparse.SUPPRESS)
+        # image to dilate
+        parser.add_argument("image")
+
+        # nargs will take in as many inputs as are available before the next flag
+        parser.add_argument('-d', "--dilateType", choices=['ball', 'cross'], default='cross')
+        # voxels to apply dilation to - can take in as many as needed
+        parser.add_argument('-v', "--voxel", type=int, default=1)
+
+        parser.add_argument('-k', '--kernel', default=1, type=int)
+        parser.add_argument('-s', '--smooth', default=0, type=int)
+
+        # if they want to change the save file
+        parser.add_argument('-o', '--output', default="dilatedOutput.img")
+
+        args = parser.parse_args()
+
+    except Exception as e:
+        print(e)
+        print("Automatically assigning image, dilateType, and voxel")
+        args = dilateArg() # get default values if no parser args or if there is an error
+
+    finally:
+        dilate(args)
