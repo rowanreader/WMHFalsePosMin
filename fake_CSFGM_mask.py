@@ -66,7 +66,7 @@ if __name__=="__main__":
             Optional flag:
             -o: Output file, default is WMHMaskoutput.img (note: do not give absolute path. File will be relative to WMHFalsePosMin)
             -d: Dilation type, either 'ball' or 'cross', default is 'cross' 
-            -m Maskout values (for first mask extraction), default is [3,5]. This will also be what is masked in for the final image
+            -m Maskout values (for first mask extraction), default is [5, 7]. This will also be what is masked in for the final image
             -v Voxel to dilate, default is 1
             -k Kernel size for dilation, default is 1
             -s Smoothing, default is 0 (no smoothing applied)
