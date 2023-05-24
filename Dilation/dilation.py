@@ -125,11 +125,16 @@ if __name__ == "__main__":
         parser.add_argument('-o', '--output', default="dilatedOutput.img")
 
         args = parser.parse_args()
+        print("Hi")
 
-    except Exception as e:
-        print(e)
-        print("Automatically assigning image, dilateType, and voxel")
+    except:
+        print("Attempting to automatically assign image, dilateType, and voxel")
         args = dilateArg() # get default values if no parser args or if there is an error
 
     finally:
-        dilate(args)
+        try:
+            dilate(args)
+        except Exception as e:
+            print("dilation.py failed, please ensure file paths and inputs are correct, use -h flag for more info")
+            print("Full error:")
+            print(e)

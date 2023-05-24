@@ -20,6 +20,8 @@ class WMHArg():
         self.kernel = kernel
         self.smooth = smooth
 
+
+
 def fakeCSFGM(args):
 
     # to make it easier to identify what this script is doing, print out the equivalent commands
@@ -106,14 +108,20 @@ if __name__=="__main__":
             command = True
 
         except:
-            print("Automatically assigning image1 and image2")
+            print("Attempting to automatically assign image1 and image2")
             args = WMHArg()
             command = False
-
         finally:
-            scriptStr = fakeCSFGM(args)
-            if not command:
-                for i in scriptStr:
-                    print(i)
+            try:
+                scriptStr = fakeCSFGM(args)
+                if not command:
+                    print()
+                    for i in scriptStr:
+                        print(i)
+                    print("Slight modifications to image paths may be required due to file structure. Use absolute paths to be certain the correct file is being used")
+            except Exception as e:
+                print("fake_CSFGM_mask.py failed, please ensure all file paths and inputs are correct, use -h flag for more info")
+                print("Full error:")
+                print(e)
 
 

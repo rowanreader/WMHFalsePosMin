@@ -1,9 +1,9 @@
 import nibabel as nib
-import sys
+# import sys
 import argparse
 from argparse import RawTextHelpFormatter
-import matplotlib.pyplot as plt
-import os
+# import matplotlib.pyplot as plt
+# import os
 
 
 class mimoArg():
@@ -153,10 +153,14 @@ if __name__ == "__main__":
         args = parser.parse_args()
 
     except:
-        print("Automatically assigning image1 and image2")
-
+        print("Attempting to automatically assigning image1 and image2")
         args = mimoArg()
 
     finally:
-        mimo(args)
+        try:
+            mimo(args)
+        except Exception as e:
+            print("mimo.py failed, please ensure all file paths and inputs are correct, use -h flag for more info")
+            print("Full error:")
+            print(e)
 
