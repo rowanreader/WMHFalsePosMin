@@ -2,6 +2,7 @@ import nibabel as nib
 # import sys
 import argparse
 from argparse import RawTextHelpFormatter
+import numpy as np
 # import matplotlib.pyplot as plt
 # import os
 
@@ -16,11 +17,11 @@ class mimoArg():
     #              maskAll=False):
     def __init__(self, image1="../tempFCSFGMoutput.img",
                  image2="../../Data/AMIE_001/AMIE_001_T1acq_FL_mc_flwmt_lesions_relabelled.img",
-                 output="CSFGMoutput2.img", maskIn=None, maskOut=None,
+                 output="CSFGMoutput.img", maskIn=None, maskOut=None,
                  maskAll=False):
         if not maskOut and not maskIn and not maskAll:
             # maskIn = [5, 7] # only assign if maskOut not assigned
-            maskOut = [5, 7]
+            maskOut = [5, 7] # default value
 
         self.image1 = image1
         self.image2 = image2
@@ -61,7 +62,7 @@ def mimo(args):
     # load T1 csf image - take as input for other
     data = nib.load(maskFile)
     # get image data
-    image = data.get_fdata()
+    image = np.rint(data.get_fdata()) # rounding error occurs on server for some reason
     if len(image.shape) == 4:
         image = image.squeeze()
         print("Extra dimension found, reducing to 3 dimensions")
@@ -93,7 +94,7 @@ def mimo(args):
         image2[image == val] = 0
 
     print("Saving....")
-    final_img = nib.Nifti1Image(image2, data2.affine)
+    final_img = nib.Nifti1Image(image2, data2.affine, data2.header)
     nib.save(final_img, outputFile)
     print("Done!")
     print("Image saved to {}".format(outputFile))

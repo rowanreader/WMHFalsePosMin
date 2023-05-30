@@ -26,7 +26,7 @@ def dilate(args):
     # get image data
     initialImage = data.get_fdata()
 
-    image = np.array(initialImage)
+    image = np.rint(np.array(initialImage))
     if len(image.shape) == 4:
         image = image.squeeze()
         print("Extra dimension found, reducing to 3 dimensions")

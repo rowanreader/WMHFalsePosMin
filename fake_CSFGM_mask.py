@@ -28,7 +28,7 @@ def fakeCSFGM(args):
     scriptString = ["This script is doing the equivalent of running:"]
 
     # based on inputs, call mimo and dilation to get wanted mask
-    outputFile = "tempFCSFGMoutput.img"
+    outputFile = "WMHFalsePosMin/tempFCSFGMoutput.img"
     mimoArgs1 = mimo.mimoArg(image1=args.image1, image2=args.image2, output=outputFile, maskIn=args.mask)
     mimo.mimo(mimoArgs1)
     # mask = ''.join(f'"{e}"' for e in args.mask)
