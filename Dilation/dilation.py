@@ -125,7 +125,6 @@ if __name__ == "__main__":
         parser.add_argument('-o', '--output', default="dilatedOutput.img")
 
         args = parser.parse_args()
-        print("Hi")
 
     except:
         print("Attempting to automatically assign image, dilateType, and voxel")

@@ -9,11 +9,12 @@ class WMHArg():
                  image2=".",
                  image3="/home/jacqueline/PycharmProjects/Data/AMIE_001/AMIE_001_T1acq_FL_mc_flwmt_lesions_relabelled.img",
                  dilateType="cross",
-                 output="WMHMaskoutput.img", mask=[5, 7], voxel=[5, 7], kernel=2, smooth=0):
+                 output="WMHMaskoutput.img", tempSave="/home/jacqueline/PycharmProjects/WMHFalsePosMin/tempFCSFGMoutput.img", mask=[5, 7], voxel=[5, 7], kernel=2, smooth=0):
         self.image1 = image1
         self.image2 = image2
         self.image3 = image3
         self.output = output
+        self.tempSave = tempSave
         self.dilateType = dilateType
         self.mask = mask
         self.voxel = voxel
@@ -28,7 +29,7 @@ def fakeCSFGM(args):
     scriptString = ["This script is doing the equivalent of running:"]
 
     # based on inputs, call mimo and dilation to get wanted mask
-    outputFile = "WMHFalsePosMin/tempFCSFGMoutput.img"
+    outputFile = args.tempSave
     mimoArgs1 = mimo.mimoArg(image1=args.image1, image2=args.image2, output=outputFile, maskIn=args.mask)
     mimo.mimo(mimoArgs1)
     # mask = ''.join(f'"{e}"' for e in args.mask)
@@ -66,7 +67,8 @@ if __name__=="__main__":
             WMHFalsePosMin must contain child directories Dilation and CSFGM_mask, which contain dilation.py and mimo.py respectively
             
             Optional flag:
-            -o: Output file, default is WMHMaskoutput.img (note: do not give absolute path. File will be relative to WMHFalsePosMin)
+            -o: Output file, default is WMHMaskoutput.img
+            -t: Temporary save location, will have dilated mask at end of running
             -d: Dilation type, either 'ball' or 'cross', default is 'cross' 
             -m Maskout values (for first mask extraction), default is [5, 7]. This will also be what is masked in for the final image
             -v Voxel to dilate, default is 1
@@ -75,7 +77,7 @@ if __name__=="__main__":
 
             Example 1:
             
-            python3 fake_CSFGM_mask.py Users/Data/AMIE_001/AMIE_001_T1_seg_vcsf.img . Users/Data/AMIE_001/AMIE_001_T1acq_FL_mc_flwmt_lesions_relabelled.img -o output.img -d cross -v 3 5 -m 5 7      
+            python3 fake_CSFGM_mask.py Users/Data/AMIE_001/AMIE_001_T1_seg_vcsf.img . Users/Data/AMIE_001/AMIE_001_T1acq_FL_mc_flwmt_lesions_relabelled.img -o output.img -t tempSave.img -d cross -v 3 5 -m 5 7      
 
             """
 
@@ -103,6 +105,7 @@ if __name__=="__main__":
 
             # if they want to change the save file
             parser.add_argument('-o', '--output', default="WMHMaskoutput.img")
+            parser.add_argument('-t', '--tempSave', default="WMHFalsePosMin/tempFCSFGMoutput.img")
 
             args = parser.parse_args()
             command = True
