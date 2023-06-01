@@ -9,7 +9,7 @@ class WMHArg():
                  image2=".",
                  image3="/home/jacqueline/PycharmProjects/Data/AMIE_001/AMIE_001_T1acq_FL_mc_flwmt_lesions_relabelled.img",
                  dilateType="cross",
-                 output="WMHMaskoutput.img", tempSave="/home/jacqueline/PycharmProjects/WMHFalsePosMin/tempFCSFGMoutput.img", mask=[5, 7], voxel=[5, 7], kernel=2, smooth=0):
+                 output="WMHMaskoutput.img", tempSave="/home/jacqueline/PycharmProjects/WMHFalsePosMin/tempFCSFGMoutput.img", mask=[5, 7], voxel=[5, 7], kernel=[3, 2], smooth=0):
         self.image1 = image1
         self.image2 = image2
         self.image3 = image3
@@ -39,12 +39,13 @@ def fakeCSFGM(args):
     # overwrite output file
     # dilate type should be 'cross'
     # apply individually for each voxel number
-    for i in args.voxel:
-        dilateArgs = dilation.dilateArg(image=outputFile, output=outputFile, voxel=i, kernel=args.kernel,
+    numberOfDilations = len(args.voxel)
+    for i in range(numberOfDilations):
+        dilateArgs = dilation.dilateArg(image=outputFile, output=outputFile, voxel=args.voxel[i], kernel=args.kernel[i],
                                          dilateType=args.dilateType, smooth=args.smooth)
         dilation.dilate(dilateArgs)
-        scriptString.append("python3 Dilation/dilation.py {} -d {} -v {} -o {} -k {} -s {}".format(outputFile, args.dilateType, i, outputFile,
-                                                                    args.kernel, args.smooth))
+        scriptString.append("python3 Dilation/dilation.py {} -d {} -v {} -o {} -k {} -s {}".format(outputFile, args.dilateType, args.voxel[i], outputFile,
+                                                                    args.kernel[i], args.smooth))
 
     mimoArgs2 = mimo.mimoArg(image1=outputFile, image2=args.image3, output=args.output, maskOut=args.mask)
     mimo.mimo(mimoArgs2)
@@ -71,8 +72,8 @@ if __name__=="__main__":
             -t: Temporary save location, will have dilated mask at end of running
             -d: Dilation type, either 'ball' or 'cross', default is 'cross' 
             -m Maskout values (for first mask extraction), default is [5, 7]. This will also be what is masked in for the final image
-            -v Voxel to dilate, default is 1
-            -k Kernel size for dilation, default is 1
+            -v Voxel to dilate, default is [5, 7]
+            -k Kernel size for dilation, default is [3, 2] (note: must have same number of values as -v voxel)
             -s Smoothing, default is 0 (no smoothing applied)
 
             Example 1:
@@ -98,7 +99,7 @@ if __name__=="__main__":
             # voxels to apply dilation to - can take in as many as needed, applies 1 at a time
             parser.add_argument('-v', "--voxel", default=[5, 7], nargs='*', type=int)
 
-            parser.add_argument('-k', '--kernel', default=2, type=int)
+            parser.add_argument('-k', '--kernel', default=[3, 2], nargs='*', type=int)
             parser.add_argument('-s', '--smooth', default=0, type=int)
 
             parser.add_argument('-m', '--mask', default=[5, 7], nargs='*', type=int)
@@ -116,6 +117,9 @@ if __name__=="__main__":
             command = False
         finally:
             try:
+                if len(args.voxel) != len(args.kernel):
+                    print("Error, number of voxels to dilate and number of dilation values not equal")
+                    exit(0)
                 scriptStr = fakeCSFGM(args)
                 if not command:
                     print()
