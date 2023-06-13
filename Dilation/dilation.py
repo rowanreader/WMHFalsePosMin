@@ -5,7 +5,7 @@ from scipy import ndimage as ndi
 # from skimage import morphology
 import numpy as np
 # from matplotlib import pyplot as plt
-
+import os
 
 class dilateArg():
     def __init__(self, image="../../Data/AMIE_001/AMIE_001_T1_seg_vcsf.img", output="dilatedOutput.img",
@@ -75,8 +75,13 @@ def dilate(args):
     # plt.show()
     ########################
 
-    final_img = nib.Nifti1Image(dilated2, data.affine, data.header)
+    final_img = nib.Nifti1Image(dilated2, data.affine)
     nib.save(final_img, args.output)
+    os.chmod(args.output, 0o777)
+    hdrfile = args.output.split(".")
+    hdrfile[-1] = "hdr"
+    '.'.join(hdrfile)
+    os.chmod(hdrfile, 0o777)
     print("Done!")
     print("Image saved to {}".format(args.output))
 

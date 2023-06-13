@@ -1,3 +1,5 @@
-*.hdr
+env*
 *.img
-*Scratch.py
+*.hdr
+Scratch.py
+*.pyc

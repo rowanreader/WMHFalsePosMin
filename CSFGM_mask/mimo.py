@@ -4,21 +4,21 @@ import argparse
 from argparse import RawTextHelpFormatter
 import numpy as np
 # import matplotlib.pyplot as plt
-# import os
+import os
 
 
 class mimoArg():
-    # def __init__(self, image1="../../Data/AMIE_001/AMIE_001_T1_seg_vcsf.img",
-    #              image2=".", output="CSFGMoutput.img", maskIn=None, maskOut=None,
-    #              maskAll=False):
+    def __init__(self, image1="../../Data/AMIE_001/AMIE_001_T1_seg_vcsf.img",
+                 image2=".", output="CSFGMoutput2.img", maskIn=None, maskOut=None,
+                 maskAll=False):
     # def __init__(self, image1="../Dilation/dilatedOutput57.img",
     #              image2="../../Data/AMIE_001/AMIE_001_T1acq_FL_mc_flwmt_lesions_relabelled.img",
     #              output="CSFGMoutput2.img", maskIn=None, maskOut=None,
     #              maskAll=False):
-    def __init__(self, image1="../tempFCSFGMoutput.img",
-                 image2="../../Data/AMIE_001/AMIE_001_T1acq_FL_mc_flwmt_lesions_relabelled.img",
-                 output="CSFGMoutput.img", maskIn=None, maskOut=None,
-                 maskAll=False):
+    # def __init__(self, image1="../tempFCSFGMoutput.img",
+    #              image2="../../Data/AMIE_001/AMIE_001_T1acq_FL_mc_flwmt_lesions_relabelled.img",
+    #              output="CSFGMoutput.img", maskIn=None, maskOut=None,
+    #              maskAll=False):
         if not maskOut and not maskIn and not maskAll:
             # maskIn = [5, 7] # only assign if maskOut not assigned
             maskOut = [5, 7] # default value
@@ -94,8 +94,13 @@ def mimo(args):
         image2[image == val] = 0
 
     print("Saving....")
-    final_img = nib.Nifti1Image(image2, data2.affine, data2.header)
+    final_img = nib.Nifti1Image(image2, data2.affine)
     nib.save(final_img, outputFile)
+    os.chmod(outputFile, 0o777)
+    hdrfile = outputFile.split(".")
+    hdrfile[-1] = "hdr"
+    '.'.join(hdrfile)
+    os.chmod(hdrfile, 0o777)
     print("Done!")
     print("Image saved to {}".format(outputFile))
 

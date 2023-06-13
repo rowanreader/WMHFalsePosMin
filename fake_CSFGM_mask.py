@@ -9,7 +9,8 @@ class WMHArg():
                  image2=".",
                  image3="/home/jacqueline/PycharmProjects/Data/AMIE_001/AMIE_001_T1acq_FL_mc_flwmt_lesions_relabelled.img",
                  dilateType="cross",
-                 output="WMHMaskoutput.img", tempSave="/home/jacqueline/PycharmProjects/WMHFalsePosMin/tempFCSFGMoutput.img", mask=[5, 7], voxel=[5, 7], kernel=[3, 2], smooth=0):
+                 output="WMHMaskoutput.img", tempSave="/home/jacqueline/PycharmProjects/WMHFalsePosMin/tempFCSFGMoutput.img",
+                 mask=[5, 7], voxel=[5, 7], kernel=[3, 1], smooth=0):
         self.image1 = image1
         self.image2 = image2
         self.image3 = image3
@@ -72,7 +73,7 @@ if __name__=="__main__":
             -t: Temporary save location, will have dilated mask at end of running
             -d: Dilation type, either 'ball' or 'cross', default is 'cross' 
             -m Maskout values (for first mask extraction), default is [5, 7]. This will also be what is masked in for the final image
-            -v Voxel to dilate, default is [5, 7]
+            -v Voxel to dilate, default is [5, 7]. Please note -m and -v aren't connected - if you modify one you will likely want to modify the other too
             -k Kernel size for dilation, default is [3, 2] (note: must have same number of values as -v voxel)
             -s Smoothing, default is 0 (no smoothing applied)
 
