@@ -61,6 +61,7 @@ def mimo(args):
     print("Loading....")
     # load T1 csf image - take as input for other
     data = nib.load(maskFile)
+
     # get image data
     image = np.rint(data.get_fdata()) # rounding error occurs on server for some reason
     if len(image.shape) == 4:
@@ -76,6 +77,7 @@ def mimo(args):
 
     # image to stamp mask on to
     data2 = nib.load(imageFile)
+
     image2 = data2.get_fdata()
 
     # mask out all things set to value
@@ -93,14 +95,17 @@ def mimo(args):
         print("Masking out values {}".format(maskVals))
         image2[image == val] = 0
 
+
+    data2.set_data_dtype(np.uint8)
     print("Saving....")
-    final_img = nib.Nifti1Image(image2, data2.affine)
+    final_img = nib.Nifti1Image(image2, data2.affine, header=data2.header)
+
     nib.save(final_img, outputFile)
-    os.chmod(outputFile, 0o777)
-    hdrfile = outputFile.split(".")
-    hdrfile[-1] = "hdr"
-    '.'.join(hdrfile)
-    os.chmod(hdrfile, 0o777)
+    # os.chmod(outputFile, 0o777)
+    # hdrfile = outputFile.split(".")
+    # hdrfile[-1] = "hdr"
+    # '.'.join(hdrfile)
+    # os.chmod(hdrfile, 0o777)
     print("Done!")
     print("Image saved to {}".format(outputFile))
 

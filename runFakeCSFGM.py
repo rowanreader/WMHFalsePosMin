@@ -10,8 +10,8 @@ def singleRun(subjectPath):
     # assume last segment after / is AMIE_XXX
     amie = subjectPath.split("/")[-1]
     image1Name = "{}/{}_T1_seg_vcsf.img".format(subjectPath, amie)
-    image3Name = "{}/{}_T1acq_FL_mc_flwmt_lesions_relabelled.img".format(subjectPath, amie)
-    outputName = "{}/{}_WMHOutput.img".format(subjectPath, amie)
+    image3Name = "{}/{}_T1acq_FL_mc_flwmt_lesions.img".format(subjectPath, amie)
+    outputName = "{}/{}_T1acq_FL_mc_flwmt_lesions_edit.img".format(subjectPath, amie)
     tempName = "{}/temp.img".format(subjectPath)
     args = mask.WMHArg(image1=image1Name, image3=image3Name, output=outputName, tempSave=tempName)
     mask.fakeCSFGM(args)
@@ -26,8 +26,8 @@ def run(path):
                     subjectPath = "{}/{}".format(amiePath, amie) # actual AMIE folder with image files
                     print(subjectPath)
                     image1Name = "{}/{}_T1_seg_vcsf.img".format(subjectPath, amie)
-                    image3Name = "{}/{}_T1acq_FL_mc_flwmt_lesions_relabelled.img".format(subjectPath, amie)
-                    outputName = "{}/{}_WMHOutput.img".format(subjectPath,amie)
+                    image3Name = "{}/{}_T1acq_FL_mc_flwmt_lesions.img".format(subjectPath, amie)
+                    outputName = "{}/{}_T1acq_FL_mc_flwmt_lesions_edit.img".format(subjectPath,amie)
                     tempName = "{}/temp.img".format(subjectPath)
                     args = mask.WMHArg(image1=image1Name, image3=image3Name, output=outputName, tempSave=tempName)
                     mask.fakeCSFGM(args)

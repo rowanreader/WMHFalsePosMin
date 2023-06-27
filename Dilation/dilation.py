@@ -74,14 +74,15 @@ def dilate(args):
     #
     # plt.show()
     ########################
+    data.set_data_dtype(np.uint8)
+    final_img = nib.Nifti1Image(dilated2, data.affine, header=data.header)
 
-    final_img = nib.Nifti1Image(dilated2, data.affine)
     nib.save(final_img, args.output)
-    os.chmod(args.output, 0o777)
-    hdrfile = args.output.split(".")
-    hdrfile[-1] = "hdr"
-    '.'.join(hdrfile)
-    os.chmod(hdrfile, 0o777)
+    # os.chmod(args.output, 0o777)
+    # hdrfile = args.output.split(".")
+    # hdrfile[-1] = "hdr"
+    # '.'.join(hdrfile)
+    # os.chmod(hdrfile, 0o777)
     print("Done!")
     print("Image saved to {}".format(args.output))
 
