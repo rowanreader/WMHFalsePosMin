@@ -6,11 +6,10 @@ import numpy as np
 # import matplotlib.pyplot as plt
 import os
 
-
 class mimoArg():
     def __init__(self, image1="../../Data/AMIE_001/AMIE_001_T1_seg_vcsf.img",
                  image2=".", output="CSFGMoutput.img", maskIn=None, maskOut=None,
-                 maskAll=False, bit=8):
+                 maskAll=False):
     # def __init__(self, image1="../Dilation/dilatedOutput57.img",
     #              image2="../../Data/AMIE_001/AMIE_001_T1acq_FL_mc_flwmt_lesions_relabelled.img",
     #              output="CSFGMoutput2.img", maskIn=None, maskOut=None,
@@ -29,7 +28,6 @@ class mimoArg():
         self.maskIn = maskIn
         self.maskOut = maskOut
         self.maskAll = maskAll
-        self.fileType = bit
 
 def mimo(args):
     if not args.maskIn and not args.maskOut and not args.maskAll:
@@ -62,14 +60,18 @@ def mimo(args):
     print("Loading....")
     # load T1 csf image - take as input for other
     data = nib.load(maskFile)
-    if args.fileType == 8:
-        bitType = np.int8
-    elif args.fileType == 16:
-        bitType = np.int16
-    else:
-        raise Exception("Error, invalid filetype bit, options are 8 or 16")
+
+    # get RPI orientation
+    # end = nib.orientations.axcodes2ornt(('L', 'A', 'S'))
+    # print(nib.orientations.aff2axcodes(data.affine))
+    # start = nib.orientations.axcodes2ornt(nib.orientations.aff2axcodes(data.affine))
+    # print(start)
+    # print(end)
+    # ornt = nib.orientations.ornt_transform(start, end)
     # get image data
-    image = np.rint(data.get_fdata().astype(bitType))  # rounding error occurs on server for some reason
+    image = np.rint(data.get_fdata().astype(np.int16))  # rounding error occurs on server for some reason
+
+    # image = nib.apply_orientation(image, ornt)
     if len(image.shape) == 4:
         image = image.squeeze()
         print("Extra dimension found, reducing to 3 dimensions")
@@ -84,7 +86,12 @@ def mimo(args):
     # image to stamp mask on to
     data2 = nib.load(imageFile)
 
-    image2 = data2.get_fdata().astype(bitType)
+    # start = nib.orientations.axcodes2ornt(nib.orientations.aff2axcodes(data2.affine))
+    # ornt = nib.orientations.ornt_transform(start, end)
+    image2 = data2.get_fdata().astype(np.int16)
+
+    # image2 = nib.apply_orientation(image2, ornt)
+    # print(ornt)
 
     # mask out all things set to value
     # could condense it but this is more organized
@@ -102,15 +109,74 @@ def mimo(args):
         image2[image == val] = 0
 
 
-    data2.set_data_dtype(bitType)
+    data2.set_data_dtype(np.int16)
+    # initialOri = nib.orientations.axcodes2ornt(nib.aff2axcodes(data2.affine))
+    # print(initialOri)
+    # print(nib.orientations.ornt2axcodes(initialOri))
+    # endOri = nib.orientations.axcodes2ornt(('R', 'P', 'S'))
+    # print(endOri)
+    # print(nib.orientations.ornt2axcodes(endOri))
+    # transform = nib.orientations.ornt_transform(initialOri, endOri)
+    # image2 = nib.orientations.apply_orientation(image2, transform) #
+    # image2 = nib.orientations.apply_orientation(image2,nib.orientations.axcodes2ornt(('R', 'P', 'S')))
+    # # data2.affine = data2.affine*transform
     # print(nib.aff2axcodes(data2.affine))
-    nib.orientations.apply_orientation(image2, nib.orientations.axcodes2ornt(('R', 'P', 'I')))
+    # print(data2.affine)
+    # # print(np.diag((1, -1, -1, -1)))
+    # RPI_orientation = np.matmul(np.diag((-1, 1, -1, 1)), data2.affine)
+    # print(RPI_orientation)
 
+    # image2 = nib.orientations.apply_orientation(image2, nib.orientations.axcodes2ornt(('L', 'A', 'I')))
+    # these are without changing the header/affine
+    # LAS: Default
+    # LAI: Horizontal flip for S and C, vertical flip for A and C
+    # LPS: Horizontal flip for A, vertical flip for all
+    # LPI: Horizontal flip for all, vertical flip for all
+    # RAS: Vertical flip for A and C
+    # RAI: Horizontal flip for S and C
+    # RPS: Horizontal flip for A, vertical flip for S
+    # RPI: Horizontal flip for all, vertical flip for S
+    # data2.affine = RPI_orientation
+    # data3 = data2.as_reoriented(RPI_orientation)
+    # data3 = nib.load(imageFile)
+    # data3 = nib.as_closest_canonical(data3)
+    # data3 = nib.load(imageFile).as_reoriented(nib.orientations.axcodes2ornt(('L', 'P', 'I')))
+    # data3 = data3.as_reoriented(nib.orientations.axcodes2ornt(('L', 'P', 'I')))
+    # changing only header
+    # LAS: Horizontal flip for A, vertical flip for all
+    # LAI: Horizontal flip for all, vertical flip for all
+    # LPS: Vertical flip for A and C
+    # LPI: Horizontal flip for S and C, vertical flip for A and C
+    # RAS: Default
+    # RAI: Horizontal flip for all, vertical flip for S
+    # RPS: Default
+    # RPI: Horizontal flip for S and C
+
+    # BOTH: RAI + RAI = vertical flip for S, horizontal flip for A
+
+
+    # print(data2.affine)
+    # print(data3.affine)
+    #
+    # print("")
+    # print(nib.aff2axcodes(data3.affine))
+    # print(data3.header)
+    # image2 = image2[:, ::-1, :]
+    # print(data2.header)
+    # print(data2.affine)
     print("Saving....")
-    final_img = nib.Nifti1Image(image2, data2.affine, header=data2.header)
+    header = data2.header.binaryblock
+    analyzeHead = nib.analyze.AnalyzeHeader(header)
+    final_img = nib.analyze.AnalyzeImage(image2, data2.affine, header=analyzeHead)
+    # final_img = nib.Nifti1Image(image2, data2.affine, header=analyzeHead)
     # final_img = nib.Nifti1Image(image2, data2.affine, header=data2.header)
-
     nib.save(final_img, outputFile)
+    #
+    # img = ants.image_read(outputFile)
+    # # reorient image
+    # reorient = ants.reorient_image2(img, 'RPI')
+    # ants.image_write(reorient, outputFile)
+
     # os.chmod(outputFile, 0o777)
     # hdrfile = outputFile.split(".")
     # hdrfile[-1] = "hdr"
@@ -118,7 +184,6 @@ def mimo(args):
     # os.chmod(hdrfile, 0o777)
     print("Done!")
     print("Image saved to {}".format(outputFile))
-
 if __name__ == "__main__":
     # help string, printed out when help flag is used
     helpStr = """    This is the mimo (mask-in-mask-out) script
@@ -137,15 +202,15 @@ if __name__ == "__main__":
     Optional flag:
     -o: specify output file, default is CSFGMoutput.img
     
-    Example 1 (masks in value 3. Any area that has a value of 3 in Image 1 will be preserved in Image 2. Everything else will be removed), images are both bit 8:
+    Example 1 (masks in value 3. Any area that has a value of 3 in Image 1 will be preserved in Image 2. Everything else will be removed):
     
-    python3 mimo.py AMIE_003_T1_seg.img AMIE_003_T1acq_FL_mc_flwmt_lesions.img -mi 3 -b 8
+    python3 mimo.py AMIE_003_T1_seg.img AMIE_003_T1acq_FL_mc_flwmt_lesions.img -mi 3
     
-    Example 2 (masks out values 4, 5, and 8. Any area that has a value of 4, 5, or 8 in Image 1 will be removed in Image 2. Everything else will be preserved), images are both bit 16:
+    Example 2 (masks out values 4, 5, and 8. Any area that has a value of 4, 5, or 8 in Image 1 will be removed in Image 2. Everything else will be preserved):
     
-    python3 mimo.py /user/files/T1_seg_vcsf.img /user/files/T1acq_lesions_relabelled.img -mo 4 5 8 -b 16
+    python3 mimo.py /user/files/T1_seg_vcsf.img /user/files/T1acq_lesions_relabelled.img -mo 4 5 8
     
-    Example 3 (masks in values 4 and 5, saves to newOutput.img), images are both bit 8 (default value):
+    Example 3 (masks in values 4 and 5, saves to newOutput.img):
     
     python3 mimo.py /user/files/T1_seg_vcsf.img /user/files/T1acq_lesions_relabelled.img -mi 4 5 -o newOutput.img
     
@@ -170,15 +235,14 @@ if __name__ == "__main__":
         parser.add_argument('-m', '--maskAll', action='store_true')
         # if they want to change the save file
         parser.add_argument('-o', '--output', default="CSFGMoutput.img")
-        # bit type of files
-        parser.add_argument('-b', '--bit', default=8, choices=[8,16])
 
         args = parser.parse_args()
 
     except:
         print("Attempting to automatically assigning image1 and image2")
         # args = mimoArg()
-        args = mimoArg(image1="../../Data/AMIE_254/AMIE_254_T1acq_nu_HfB.img", image2="../../Data/AMIE_254/AMIE_254_T1acq_nu_FL.img", maskIn=[1])
+        subID = "195"
+        args = mimoArg(image1="../../Data/AMIE_{}/AMIE_{}_T1acq_nu_HfB.img".format(subID, subID), image2="../../Data/AMIE_{}/AMIE_{}_T1acq_nu_FL.img".format(subID, subID), maskIn=[1])
 
     finally:
         try:

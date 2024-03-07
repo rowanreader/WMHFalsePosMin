@@ -9,7 +9,7 @@ import os
 
 class dilateArg():
     def __init__(self, image="../../Data/AMIE_001/AMIE_001_T1_seg_vcsf.img", output="dilatedOutput.img",
-                 voxel=7, kernel=1, dilateType="cross", smooth=0):
+                 voxel=7, kernel=1, dilateType="cross", smooth=0, bit=8):
 
         self.image = image
         # self.image = "../Data/AMIE_001/AMIE_001_T1_seg.img" # dimension mismatch
@@ -18,13 +18,19 @@ class dilateArg():
         self.kernel = kernel
         self.dilateType = dilateType
         self.smooth = smooth
-
+        self.fileType = bit
 
 def dilate(args):
+    if args.bit == 8:
+        bitType = np.uint8
+    elif args.bit == 16:
+        bitType = np.uint16
+    else:
+        raise Exception("Error, invalid filetype bit, options are 8 or 16")
     print("Loading...")
     data = nib.load(args.image)
     # get image data
-    initialImage = data.get_fdata()
+    initialImage = data.get_fdata().astype(bitType)
 
     image = np.rint(np.array(initialImage))
     if len(image.shape) == 4:
@@ -74,7 +80,8 @@ def dilate(args):
     #
     # plt.show()
     ########################
-    data.set_data_dtype(np.uint8)
+
+    data.set_data_dtype(bitType)
     final_img = nib.Nifti1Image(dilated2, data.affine, header=data.header)
 
     nib.save(final_img, args.output)
@@ -101,10 +108,11 @@ if __name__ == "__main__":
     -o: specify output file, default is dilatedOutput.img
     -k: kernel size for dilation, default is 1
     -s: apply smoothing filter (not applied automatically), provide size of filter
+    -b: bit type of file, default is 8
 
     Example 1:
 
-    python3 dilation.py AMIE_001/AMIE_001_T1_seg_vcsf.img -d cross -v 7 -k 2 -o newOutput.img -s 3
+    python3 dilation.py AMIE_001/AMIE_001_T1_seg_vcsf.img -d cross -v 7 -k 2 -o newOutput.img -s 3 -b 16
     
     Example 2 (using all defaults):
 
@@ -129,6 +137,7 @@ if __name__ == "__main__":
 
         # if they want to change the save file
         parser.add_argument('-o', '--output', default="dilatedOutput.img")
+        parser.add_argument('-b', '--bit', default=8, choices=[8,16])
 
         args = parser.parse_args()
 

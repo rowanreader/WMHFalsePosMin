@@ -2,7 +2,8 @@ from Dilation import dilation
 from CSFGM_mask import mimo
 import argparse
 from argparse import RawTextHelpFormatter
-
+import nibabel as nib
+import numpy as np
 
 class WMHArg():
     def __init__(self, image1="/home/jacqueline/PycharmProjects/Data/AMIE_001/AMIE_001_T1_seg_vcsf.img",
@@ -10,7 +11,7 @@ class WMHArg():
                  image3="/home/jacqueline/PycharmProjects/Data/AMIE_001/AMIE_001_T1acq_FL_mc_flwmt_lesions_relabelled.img",
                  dilateType="cross",
                  output="WMHMaskoutput.img", tempSave="/home/jacqueline/PycharmProjects/WMHFalsePosMin/tempFCSFGMoutput.img",
-                 mask=[5, 7], voxel=[5, 7], kernel=[3, 1], smooth=0):
+                 mask=[5, 7], voxel=[5, 7], kernel=[2, 1], smooth=0, bit=8):
         self.image1 = image1
         self.image2 = image2
         self.image3 = image3
@@ -21,8 +22,29 @@ class WMHArg():
         self.voxel = voxel
         self.kernel = kernel
         self.smooth = smooth
+        self.fileType = bit
+        if bit == 8:
+            self.bitType = np.int8
+        elif bit == 16:
+            self.bitType == np.int16
+        else:
+            raise Exception("Error, invalid filetype bit, options are 8 or 16")
 
+# everywhere in the file that isn't 0 gets set to 1
+def changeLabel(infile, output="changedLabel.img", replacement=1, bitType=np.uint8):
+    print("Changing label...")
+    data = nib.load(infile)
+    hd = data.header
+    # get image data
+    image = data.get_fdata().astype(bitType)
+    # image[image != 0] = 1
+    # print(data.header)
+    data.set_data_dtype(bitType)
 
+    # print(data.header)
+    print("Saving....")
+    final_img = nib.Nifti1Image(image, data.affine, header=hd)
+    nib.save(final_img, output)
 
 def fakeCSFGM(args):
 
@@ -31,10 +53,10 @@ def fakeCSFGM(args):
 
     # based on inputs, call mimo and dilation to get wanted mask
     outputFile = args.tempSave
-    mimoArgs1 = mimo.mimoArg(image1=args.image1, image2=args.image2, output=outputFile, maskIn=args.mask)
+    mimoArgs1 = mimo.mimoArg(image1=args.image1, image2=args.image2, output=outputFile, maskIn=args.mask, bit=args.fileType)
     mimo.mimo(mimoArgs1)
     # mask = ''.join(f'"{e}"' for e in args.mask)
-    scriptString.append("python3 CSFGM_mask/mimo.py {} {} -o {} -mi {}".format(args.image1, args.image2, outputFile, ''.join(f'{e} ' for e in args.mask)))
+    scriptString.append("python3 CSFGM_mask/mimo.py {} {} -o {} -mi {} -b {}".format(args.image1, args.image2, outputFile, ''.join(f'{e} ' for e in args.mask), args.fileType))
 
     # mimo output written to outputFile. Use as input to dilate
     # overwrite output file
@@ -43,15 +65,17 @@ def fakeCSFGM(args):
     numberOfDilations = len(args.voxel)
     for i in range(numberOfDilations):
         dilateArgs = dilation.dilateArg(image=outputFile, output=outputFile, voxel=args.voxel[i], kernel=args.kernel[i],
-                                         dilateType=args.dilateType, smooth=args.smooth)
+                                         dilateType=args.dilateType, smooth=args.smooth, bit=args.fileType)
         dilation.dilate(dilateArgs)
         scriptString.append("python3 Dilation/dilation.py {} -d {} -v {} -o {} -k {} -s {}".format(outputFile, args.dilateType, args.voxel[i], outputFile,
-                                                                    args.kernel[i], args.smooth))
+                                                                    args.kernel[i], args.smooth, args.fileType))
 
-    mimoArgs2 = mimo.mimoArg(image1=outputFile, image2=args.image3, output=args.output, maskOut=args.mask)
+    mimoArgs2 = mimo.mimoArg(image1=outputFile, image2=args.image3, output=outputFile, maskOut=args.mask, bit=args.fileType)
     mimo.mimo(mimoArgs2)
-    scriptString.append("python3 CSFGM_mask/mimo.py {} {} -o {} -mo {}".format(outputFile, args.image3, args.output, ''.join(f'{e} ' for e in args.mask)))
+    scriptString.append("python3 CSFGM_mask/mimo.py {} {} -o {} -mo {} -b {}".format(outputFile, args.image3, args.output, ''.join(f'{e} ' for e in args.mask), args.fileType))
 
+    # change label colour by not saving header
+    changeLabel(outputFile, output=args.output, bitType=args.bitType)
 
     return scriptString
 
@@ -79,7 +103,7 @@ if __name__=="__main__":
 
             Example 1:
             
-            python3 fake_CSFGM_mask.py Users/Data/AMIE_001/AMIE_001_T1_seg_vcsf.img . Users/Data/AMIE_001/AMIE_001_T1acq_FL_mc_flwmt_lesions_relabelled.img -o output.img -t tempSave.img -d cross -v 3 5 -m 5 7      
+            python3 fake_CSFGM_mask.py Users/Data/AMIE_001/AMIE_001_T1_seg_vcsf.img . Users/Data/AMIE_001/AMIE_001_T1acq_FL_mc_flwmt_lesions_relabelled.img -o output.img -t tempSave.img -d cross -v 3 5 -m 5 7 -b 16     
 
             """
 
@@ -108,6 +132,7 @@ if __name__=="__main__":
             # if they want to change the save file
             parser.add_argument('-o', '--output', default="WMHMaskoutput.img")
             parser.add_argument('-t', '--tempSave', default="WMHFalsePosMin/tempFCSFGMoutput.img")
+            parser.add_argument('-b', '--bit', default=8, choices=[8, 16])
 
             args = parser.parse_args()
             command = True
